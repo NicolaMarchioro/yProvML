@@ -1,11 +1,11 @@
 from setuptools import setup, find_packages
-
+from prov4ml import __version__ as prov4mlversion
 with open('requirements.txt') as f:
     required = f.read().splitlines()
 
 setup(
     name='prov4ml',
-    version='1.0.0',
+    version=prov4mlversion,
     packages=find_packages(),
     install_requires=required,  # Loaded from requirements.txt
     extras_require={

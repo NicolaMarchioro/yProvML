@@ -8,7 +8,7 @@ import getpass
 import subprocess
 import warnings
 import pandas as pd
-
+from prov4ml import __version__ as prov4mlversion
 from prov4ml.constants import PROV4ML_DATA
 from prov4ml.datamodel.attribute_type import Prov4MLAttribute
 from prov4ml.datamodel.artifact_data import artifact_is_pytorch_model
@@ -220,19 +220,28 @@ def create_prov_document() -> prov.ProvDocument:
     doc.set_default_namespace(PROV4ML_DATA.USER_NAMESPACE)
     doc.add_namespace('prov','http://www.w3.org/ns/prov#')
     doc.add_namespace('xsd','http://www.w3.org/2000/10/XMLSchema#')
+    #TODO add link to ontology that defines the prov-ml namespace
     doc.add_namespace('prov-ml', 'prov-ml')
 
     run_entity = doc.entity(f'{PROV4ML_DATA.EXPERIMENT_NAME}',other_attributes={
         "prov-ml:provenance_path":Prov4MLAttribute.get_attr(PROV4ML_DATA.PROV_SAVE_PATH),
         "prov-ml:artifact_uri":Prov4MLAttribute.get_attr(PROV4ML_DATA.ARTIFACTS_DIR),
         "prov-ml:run_id":Prov4MLAttribute.get_attr(PROV4ML_DATA.RUN_ID),
-        "prov-ml:type": Prov4MLAttribute.get_attr("LearningStage"),
+        # not sure why this was set here, anyway this entity will later get Experiment as type
+        #"prov-ml:type": Prov4MLAttribute.get_attr("LearningStage"),
         "prov-ml:user_id": Prov4MLAttribute.get_attr(getpass.getuser()),
     })
-
+    #experiment entity generation, not sure why it is different from run_entity, they both use PROV4ML_DATA.EXPERIMENT_NAME as identifier
+    experiment = doc.entity(PROV4ML_DATA.EXPERIMENT_NAME,other_attributes={
+        "prov-ml:type": Prov4MLAttribute.get_attr("Experiment"),
+        "prov-ml:experiment_name": Prov4MLAttribute.get_attr(PROV4ML_DATA.EXPERIMENT_NAME),
+    })
+    # same as above, experiment and run_entity are the same entity, so this doesn't make sense
+    #doc.hadMember(experiment,run_entity)
     # add python version to run entity
     run_entity.add_attributes({"prov-ml:python_version":Prov4MLAttribute.get_attr(sys.version)})
-
+    # add prov4ml version to run entity
+    run_entity.add_attributes({"prov-ml:prov4ml_version":Prov4MLAttribute.get_attr(prov4mlversion)})
     # check if requirements.txt exists
     # if not os.path.exists("requirements_execution.txt"):
     #     os.popen("pipreqs --force .")
@@ -261,11 +270,7 @@ def create_prov_document() -> prov.ProvDocument:
     run_activity = doc.activity(f'{PROV4ML_DATA.EXPERIMENT_NAME}_execution', other_attributes={
         'prov-ml:type': Prov4MLAttribute.get_attr("LearningExecution"),
     })
-        #experiment entity generation
-    experiment = doc.entity(PROV4ML_DATA.EXPERIMENT_NAME,other_attributes={
-        "prov-ml:type": Prov4MLAttribute.get_attr("Experiment"),
-        "prov-ml:experiment_name": Prov4MLAttribute.get_attr(PROV4ML_DATA.EXPERIMENT_NAME),
-    })
+    
 
     user_ag = doc.agent(f'{getpass.getuser()}')
     doc.wasAssociatedWith(f'{PROV4ML_DATA.EXPERIMENT_NAME}_execution',user_ag)
@@ -286,7 +291,6 @@ def create_prov_document() -> prov.ProvDocument:
         doc.used(run_activity,'source_code')
 
 
-    doc.hadMember(experiment,run_entity)
     doc.wasGeneratedBy(run_entity,run_activity)
     
     if os.path.exists(PROV4ML_DATA.TMP_DIR):
@@ -358,13 +362,17 @@ def create_prov_document() -> prov.ProvDocument:
     registration_label = 'prov-ml:ModelRegistration'
     model_ser = doc.activity(registration_label)
     doc.wasInformedBy(model_ser,run_activity)
-    if model_version:
-        doc.wasGeneratedBy(model_entity_label,model_ser)
-    else:
-        model_entity_label = registration_label
+    # This was commented because it was creating a "wasGeneratedBy" relationship between the model entity and the registration activity, 
+    # since models are considered artifacts this will be done later in the code (for artifact in PROV4ML_DATA.get_artifacts():)
+    #if model_version:
+    #    doc.wasGeneratedBy(model_entity_label,model_ser)
+    #else:
+    #    model_entity_label = registration_label
     
-    for artifact in PROV4ML_DATA.get_model_versions()[:-1]: 
-        doc.hadMember(model_entity_label,f"{artifact.path}")    
+    #This loop is commented out because it creates a "hadMember" relationship between the artifact representing the last model and all the previous versions
+    #This is not correct, as the this relationship should be used to represent the belonging of an entity to a collection, which is not the case here
+    #for artifact in PROV4ML_DATA.get_model_versions()[:-1]: 
+    #    doc.hadMember(model_entity_label,f"{artifact.path}")
 
     # doc.activity("data_preparation",other_attributes={"prov-ml:type":Prov4MLAttribute.get_attr("FeatureExtractionExecution")})
     

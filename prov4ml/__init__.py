@@ -1,4 +1,4 @@
-
+__version__ = '1.0.0_dev'
 from . import * 
 from .logging_aux import *
 from .prov4ml import *
