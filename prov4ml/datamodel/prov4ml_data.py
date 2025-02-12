@@ -293,10 +293,10 @@ class Prov4MLData:
 
         if log_copy_in_prov_directory: 
             try: 
-                path = Path(value)
+                path = Path(artifact_name)
                 newart_path = self.ARTIFACTS_DIR + "/" + path.name
                 shutil.copy(path, newart_path)
-                value = newart_path
+                artifact_name = newart_path
             except: 
                 print(f">add_artifact: log_copy_in_prov_directory was True but value is not a valid Path: {value}")
 

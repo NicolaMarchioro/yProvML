@@ -271,6 +271,7 @@ def log_artifact(
 
     Parameters:
         artifact_path (str): The file path of the artifact to log.
+        value (Any): The object to be logged as an artifact.
         context (Context): The context in which the artifact is logged.
         step (Optional[int]): The step or epoch number associated with the artifact. Defaults to None.
         timestamp (Optional[int]): The timestamp associated with the artifact. Defaults to None.
@@ -310,7 +311,9 @@ def save_model_version(
     num_files = len([file for file in os.listdir(path) if str(file).startswith(model_name)])
 
     torch.save(model.state_dict(), f"{path}/{model_name}_{num_files}.pth")
-    log_artifact(model_name, f"{path}/{model_name}_{num_files}.pth", context=context, step=step, timestamp=timestamp, log_copy_in_prov_directory=False)
+    #this should be the other way around, commenting the wrong one
+    #log_artifact(model_name, f"{path}/{model_name}_{num_files}.pth", context=context, step=step, timestamp=timestamp, log_copy_in_prov_directory=False)
+    log_artifact( f"{path}/{model_name}_{num_files}.pth",model, context=context, step=step, timestamp=timestamp, log_copy_in_prov_directory=False)
 
 def log_dataset(dataset : Union[DataLoader, Subset, Dataset], label : str): 
     """
